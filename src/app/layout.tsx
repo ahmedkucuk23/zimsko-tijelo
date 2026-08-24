@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Onest, Playfair_Display } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const onest = Onest({
@@ -44,7 +45,10 @@ export default function RootLayout({
       lang="hr"
       className={`${onest.variable} ${playfair.variable} antialiased`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
