@@ -23,10 +23,14 @@ export const metadata: Metadata = {
     title: "Zimsko Tijelo | by Ana & Bezdrob",
     description:
       "Transformacija pocinje ove zime. Program treninga i ishrane kreiran da te transformise.",
-    images: ["/cover3.png"],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
-  icons: {
-    icon: "/icon-color.png",
+  twitter: {
+    card: "summary_large_image",
+    title: "Zimsko Tijelo | by Ana & Bezdrob",
+    description:
+      "Transformacija pocinje ove zime. Program treninga i ishrane kreiran da te transformise.",
+    images: ["/og-image.png"],
   },
 };
 
