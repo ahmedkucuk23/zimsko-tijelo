@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 const CHECKOUT_URL = "https://whop.com/zimsko-tijelo-7bd0/zimsko-tijelo-0e/";
@@ -51,9 +50,7 @@ function genPlan(cal: number, prot: number): { day: string; meals: Meal[] }[] {
 const TOTAL_STEPS = 4;
 
 export default function PlanIshrane() {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0); // 0 = intro, 1-4 = steps
   const [dir, setDir] = useState(1); // 1=forward, -1=back
 
   const [gender, setGender] = useState<Gender | null>(null);
@@ -71,12 +68,6 @@ export default function PlanIshrane() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  useEffect(() => {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("visible"); });
     }, { threshold: 0.1, rootMargin: "0px 0px -20px 0px" });
@@ -85,6 +76,7 @@ export default function PlanIshrane() {
   }, [showResults, activeDay]);
 
   function next() {
+    if (step === 0) { setDir(1); setStep(1); return; }
     if (step === 1 && !gender) return;
     if (step === 2 && (!weight || !height || !age)) return;
     if (step === 3 && !activity) return;
@@ -110,6 +102,7 @@ export default function PlanIshrane() {
   }
 
   const canNext =
+    step === 0 ||
     (step === 1 && !!gender) ||
     (step === 2 && !!weight && !!height && !!age) ||
     (step === 3 && !!activity) ||
@@ -121,40 +114,68 @@ export default function PlanIshrane() {
 
   return (
     <>
-      {/* Nav */}
-      <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
-        <Link href="/"><Image src="/logo-white.png" alt="Zimsko Tijelo" width={160} height={34} className="nav-logo" /></Link>
-        <button className={`burger ${menuOpen ? "open" : ""}`} onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-          <span /><span /><span />
-        </button>
-        <ul className={`nav-links ${menuOpen ? "open" : ""}`}>
-          <li><Link href="/" className="nav-link" onClick={() => setMenuOpen(false)}>Pocetna</Link></li>
-          <li><Link href="/planishrane" className="nav-link active" onClick={() => setMenuOpen(false)}>Plan ishrane</Link></li>
-          <li><a href={CHECKOUT_URL} target="_blank" rel="noopener noreferrer" className="nav-link nav-cta" onClick={() => setMenuOpen(false)}>Prijavi se</a></li>
-        </ul>
-      </nav>
-
       {/* Onboarding */}
       {!showResults && (
         <section className="onboarding">
           <div className="onboarding-inner">
-            {/* Progress */}
-            <div className="ob-progress">
-              <div className="ob-progress-bar">
-                <div className="ob-progress-fill" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
+            {/* Progress - only show for steps 1-4 */}
+            {step > 0 && (
+              <div className="ob-progress">
+                <div className="ob-progress-bar">
+                  <div className="ob-progress-fill" style={{ width: `${(step / TOTAL_STEPS) * 100}%` }} />
+                </div>
+                <div className="ob-steps-labels">
+                  {stepTitles.map((t, i) => (
+                    <span key={t} className={`ob-step-label ${step > i + 1 ? "done" : step === i + 1 ? "active" : ""}`}>
+                      <span className="ob-step-num">{step > i + 1 ? "✓" : i + 1}</span>
+                      <span className="ob-step-text">{t}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-              <div className="ob-steps-labels">
-                {stepTitles.map((t, i) => (
-                  <span key={t} className={`ob-step-label ${step > i + 1 ? "done" : step === i + 1 ? "active" : ""}`}>
-                    <span className="ob-step-num">{step > i + 1 ? "✓" : i + 1}</span>
-                    <span className="ob-step-text">{t}</span>
-                  </span>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Step content */}
             <div className="ob-content" key={step} style={{ animation: `stepSlide${dir > 0 ? "In" : "Back"} 0.35s ease forwards` }}>
+
+              {step === 0 && (
+                <div className="ob-step" style={{ textAlign: "left" }}>
+                  <div style={{ textAlign: "center", marginBottom: 40 }}>
+                    <Image src="/icon-color.png" alt="" width={44} height={44} style={{ opacity: 0.5, marginBottom: 20 }} />
+                    <h2 className="ob-title">Plan <span className="serif">ishrane</span></h2>
+                  </div>
+
+                  <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", lineHeight: 1.8, marginBottom: 24 }}>
+                    Ne postoji jedan plan ishrane za sve. Tvoje tijelo, tvoja aktivnost i tvoj cilj odredjuju sta ti zapravo treba &ndash; zato smo napravili alat koji to racuna za tebe, u par sekundi.
+                  </p>
+
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: "#C7DAE7" }}>Kako funkcionise:</h3>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", lineHeight: 1.8, marginBottom: 28 }}>
+                    Unosis svoje podatke (tezinu, visinu, godine, nivo aktivnosti) i alat po Mifflin-St Jeor formuli &ndash; naucno priznatoj metodi za racunanje energetskih potreba &ndash; izracunava tvoj personalizovani plan ishrane.
+                  </p>
+
+                  <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: "#C7DAE7" }}>Kako da ga koristis:</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+                    {[
+                      "Unesi trazene podatke \u2013 budi iskren/a, rezultat je onoliko tacan koliko su podaci tacni",
+                      "Dobijas svoj plan, prilagodjen tebi",
+                      "Preuzmi ga, isprintaj ili sacuvaj na telefonu \u2013 kako god ti najvise odgovara da ga imas pri ruci",
+                      "Vrati se i provjeri ponovo svake 2 sedmice ili kad upises mjere (str. 18) \u2013 ako se tvoja tezina ili aktivnost promijene, plan treba da prati tvoje tijelo, ne obrnuto",
+                    ].map((t, i) => (
+                      <div key={i} style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+                        <span style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(86,125,144,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#567D90", flexShrink: 0 }}>{i + 1}</span>
+                        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.65, paddingTop: 3 }}>{t}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ background: "rgba(86,125,144,0.08)", border: "1px solid rgba(86,125,144,0.15)", borderRadius: 14, padding: "20px 24px" }}>
+                    <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.75 }}>
+                      <strong style={{ color: "#C7DAE7" }}>Ovo nije dijeta.</strong> Ovo je gorivo koje gradi tijelo koje zelis &ndash; okvir koji ti daje jasnocu koliko ti treba i kako to rasporediti tokom dana, da Zimski program i ishrana rade zajedno, ne jedno protiv drugog.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {step === 1 && (
                 <div className="ob-step">
@@ -258,9 +279,14 @@ export default function PlanIshrane() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                   Nazad
                 </button>
+              ) : step === 1 ? (
+                <button className="ob-back" onClick={back}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                  Nazad
+                </button>
               ) : <div />}
-              <button className={`btn btn-primary ${step === TOTAL_STEPS ? "btn-lg" : ""} ${!canNext ? "btn-disabled" : ""}`} onClick={next} disabled={!canNext}>
-                {step === TOTAL_STEPS ? "Izracunaj plan" : "Dalje"}
+              <button className={`btn btn-primary ${step === 0 || step === TOTAL_STEPS ? "btn-lg" : ""} ${!canNext ? "btn-disabled" : ""}`} onClick={next} disabled={!canNext}>
+                {step === 0 ? "Zapocni" : step === TOTAL_STEPS ? "Izracunaj plan" : "Dalje"}
                 <span className="btn-arrow">&rarr;</span>
               </button>
             </div>
@@ -367,17 +393,6 @@ export default function PlanIshrane() {
         </>
       )}
 
-      {/* Footer */}
-      <footer className="footer" style={{ background: "#0d1820" }}>
-        <div className="footer-inner">
-          <Image src="/logo-white.png" alt="Zimsko Tijelo" width={120} height={28} style={{ height: 28, width: "auto", opacity: 0.4 }} />
-          <div style={{ display: "flex", gap: 20 }}>
-            <a href="#">Instagram</a>
-            <a href="#">TikTok</a>
-          </div>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.2)" }}>&copy; 2026 Zimsko Tijelo</p>
-        </div>
-      </footer>
 
       <style>{`
         /* ─── ONBOARDING ─── */
@@ -388,7 +403,7 @@ export default function PlanIshrane() {
           align-items: center;
           justify-content: center;
           background: linear-gradient(170deg, #1a2a38 0%, #0d1820 50%, #111f2b 100%);
-          padding: 100px 20px 40px;
+          padding: 40px 20px;
           position: relative;
           overflow: hidden;
         }
